@@ -12,5 +12,9 @@ __pycache__/
 .vscode/
 .idea/
 
+# Logs
+ProjectSynapse/backend/uvicorn.out.log
+ProjectSynapse/backend/uvicorn.err.log
+
 
 
