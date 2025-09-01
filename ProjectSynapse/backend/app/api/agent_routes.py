@@ -63,3 +63,9 @@ async def get_agents():
 @router.get("/system-logs")
 async def get_system_logs():
     return [{"time": datetime.now().strftime("%H:%M:%S"), "message": "Synapse Prime Core is online."}]
+
+
+# Backwards-compatible alias
+@router.get("/system/logs")
+async def get_system_logs_slash():
+    return await get_system_logs()

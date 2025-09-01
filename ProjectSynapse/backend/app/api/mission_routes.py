@@ -21,3 +21,14 @@ async def get_queue():
 async def add_to_queue(m: Mission):
     _queue.append(m.name)
     return {"success": True, "queue": _queue}
+
+
+# Backwards-compatible aliases (older frontends may use the slash style)
+@router.get("/project/queue")
+async def get_queue_slash():
+    return await get_queue()
+
+
+@router.post("/project/queue")
+async def add_to_queue_slash(m: Mission):
+    return await add_to_queue(m)
