@@ -67,7 +67,8 @@ def fix_requirements(path: Path) -> list:
             fixes.append("removed_venv_line")
             continue
         new_lines.append(line)
-    cleaned = "\n".join([l.rstrip() for l in new_lines if l.strip() != ""]) + "\n"
+    # avoid single-letter variable names for linters and readability
+    cleaned = "\n".join([ln.rstrip() for ln in new_lines if ln.strip() != ""]) + "\n"
     if cleaned != text:
         path.write_text(cleaned, encoding="utf-8")
         fixes.append("cleaned_requirements")
@@ -119,7 +120,7 @@ def import_check(venv_python: Path, module: str) -> tuple:
 
 def http_check(url: str) -> tuple:
     try:
-        import urllib.request, json
+        import urllib.request
 
         with urllib.request.urlopen(url, timeout=5) as r:
             b = r.read()

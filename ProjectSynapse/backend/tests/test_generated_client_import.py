@@ -9,7 +9,7 @@ if str(GEN_CLIENT_DIR) not in sys.path:
 
 
 def test_generated_client_import():
-    import project_synapse_core_v3_groq_client as gen
+    import project_synapse_core_v3_groq_client as gen  # type: ignore[import]
 
     # instantiate the client with a dummy base_url
     c = gen.Client(base_url="http://localhost")
