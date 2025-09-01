@@ -1,2 +1,16 @@
+# Virtual environments
+venv/
+**/venv/
+frontend/venv/
+ProjectSynapse/backend/venv/
+
+# Python cache
+__pycache__/
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+
 
 
