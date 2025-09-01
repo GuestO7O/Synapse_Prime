@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="nl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Synapse - Command Center V7 (Groq Live)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #030712; color: #e5e7eb; }
+        .card { background-color: rgba(17, 24, 39, 0.8); border: 1px solid rgba(55, 65, 81, 0.5); backdrop-filter: blur(12px); }
+        .log-entry { border-left: 4px solid; }
+        .log-info { border-color: #3b82f6; } .log-error { border-color: #ef4444; } .log-milestone { border-color: #eab308; } .log-warning { border-color: #f59e0b; }
+        .agent-roster-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Project Synapse Command Center</h1>
+            <p class="text-lg text-gray-400">Status: <span id="system-status" class="text-green-400 font-semibold">ONLINE</span></p>
+        </div>
+        <div class="text-right mt-4 sm:mt-0">
+            <p class="text-lg font-medium text-white" id="current-time">--:--:--</p>
+            <p class="text-sm text-gray-500" id="api-status">API: Pinging...</p>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-12 gap-6">
+        
+        <div class="col-span-12 lg:col-span-3 space-y-6">
+            <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-bold text-white mb-4">Missie Input</h2>
+                <textarea id="mission-input" class="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm h-24" placeholder="Definieer de missie... b.v. 'Bouw een interactieve weer-app met een donker thema'"></textarea>
+                <button id="start-mission-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-3">Start Missie</button>
+            </div>
+            <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-bold text-white mb-4">Agent Roster</h2>
+                <div id="agent-roster" class="h-[calc(100vh-350px)] overflow-y-auto space-y-2 pr-2 text-sm"></div>
+            </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-9 space-y-6">
+             <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-bold text-white mb-4">Actieve Taken & Status</h2>
+                <div id="active-tasks" class="h-64 overflow-y-auto space-y-3 pr-2"></div>
+            </div>
+            <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-bold text-white mb-4">System Log Stream</h2>
+                <div id="log-stream" class="h-96 overflow-y-auto space-y-3 pr-2 text-sm"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'http://127.0.0.1:5001/api';
+
+            const dom = {
+                time: document.getElementById('current-time'),
+                apiStatus: document.getElementById('api-status'),
+                logStream: document.getElementById('log-stream'),
+                agentRoster: document.getElementById('agent-roster'),
+                activeTasks: document.getElementById('active-tasks'),
+                missionInput: document.getElementById('mission-input'),
+                startMissionBtn: document.getElementById('start-mission-btn'),
+                // banner voor kritieke fouten
+                errorBanner: null,
+            };
+
+            // Eenvoudige app-state (agents wordt door updateDashboardFromAPI gevuld)
+            let state = { agents: [] };
+
+            // -----------------------------------------------------------------
+            // Helper: fetch JSON met uitgebreide foutafhandeling
+            // -----------------------------------------------------------------
+            async function fetchJSON(url, options = {}) {
+                try {
+                    const response = await fetch(url, options);
+                    const text = await response.text();          // lees raw voor betere foutmeldingen
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (_) {
+                        throw new Error(`Ongeldige JSON‑respons: ${text}`);
+                    }
+                    if (!response.ok) {
+                        const msg = data.detail || response.statusText || 'Onbekende serverfout';
+                        throw new Error(`API fout ${response.status}: ${msg}`);
+                    }
+                    return data;
+                } catch (err) {
+                    // Log en rethrow zodat de caller kan reageren
+                    addLogEntry(`Netwerk‑/API‑fout: ${err.message}`, 'error');
+                    throw err;
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // Log‑functie (ongewijzigd, alleen een kleine aanpassing voor type)
+            // -----------------------------------------------------------------
+            function addLogEntry(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry p-3 rounded-md log-${type}`;
+                const time = new Date().toLocaleTimeString('nl-NL');
+                entry.innerHTML = `<p class="text-xs text-gray-500">${time}</p><p class="text-white">${message}</p>`;
+                dom.logStream.prepend(entry);
+                if (dom.logStream.children.length > 50) dom.logStream.lastChild.remove();
+            }
+
+            // -----------------------------------------------------------------
+            // UI‑updates (roster, taken) – ongewijzigd
+            // -----------------------------------------------------------------
+            function renderAgentRoster() {
+                dom.agentRoster.innerHTML = state.agents.map(agent => {
+                    const statusColor = { IDLE: 'text-gray-400', BUSY: 'text-yellow-400', ANALYZING: 'text-blue-400'}[agent.status] || 'text-gray-500';
+                    return `
+                        <div class="flex items-center justify-between p-2 rounded-md agent-roster-item">
+                            <span class="font-semibold text-white">${agent.name} (${agent.type})</span>
+                            <span class="font-semibold ${statusColor}">${agent.status}</span>
+                        </div>`;
+                }).join('');
+            }
+            
+            function renderActiveTasks() {
+                const activeAgents = state.agents.filter(a => a.status !== 'IDLE');
+                if (activeAgents.length === 0) {
+                    dom.activeTasks.innerHTML = '<p class="text-gray-500">Alle agenten wachten op een taak...</p>';
+                    return;
+                }
+                dom.activeTasks.innerHTML = activeAgents.map(agent => `
+                    <div class="bg-gray-900 p-3 rounded-md">
+                        <div class="flex justify-between items-center">
+                            <p class="font-bold text-white">${agent.name}</p>
+                            <p class="text-sm text-yellow-400 font-semibold">${agent.status}</p>
+                        </div>
+                        <p class="text-sm text-gray-300 mt-1">${agent.task}</p>
+                    </div>`).join('');
+            }
+
+            // -----------------------------------------------------------------
+            // Dashboard‑update via de nieuwe fetchJSON‑wrapper
+            // -----------------------------------------------------------------
+            async function updateDashboardFromAPI() {
+                try {
+                    const agents = await fetchJSON(`${API_BASE_URL}/agents`);
+                    state.agents = agents;
+
+                    dom.apiStatus.textContent = 'API: Verbonden';
+                    dom.apiStatus.className = 'text-sm text-green-400';
+
+                    renderAgentRoster();
+                    renderActiveTasks();
+                } catch (err) {
+                    dom.apiStatus.textContent = 'API: Niet bereikbaar';
+                    dom.apiStatus.className = 'text-sm text-red-400';
+                    // Toon een opvallende banner (eenmalig)
+                    showErrorBanner('Kan geen verbinding maken met de API. Controleer of de backend draait en CORS‑instellingen correct zijn.');
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // Missie starten – nu met fetchJSON
+            // -----------------------------------------------------------------
+            async function startMission() {
+                const mission = dom.missionInput.value.trim();
+                if (!mission) {
+                    addLogEntry("Missie‑input is leeg.", 'warning');
+                    return;
+                }
+
+                addLogEntry(`Nieuwe missie ontvangen: "${mission}". Analyseren…`, 'milestone');
+                dom.startMissionBtn.disabled = true;
+                dom.startMissionBtn.textContent = "Analyseren...";
+
+                try {
+                    // backend accepteert project toevoegingen via POST /project-queue { name: ... }
+                    const result = await fetchJSON(`${API_BASE_URL}/project-queue`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: mission })
+                    });
+
+                    if (result && result.success) {
+                        addLogEntry("Missie toegevoegd aan project-queue.", 'info');
+                    } else {
+                        addLogEntry("Missie POST afgerond, maar server gaf geen succes terug.", 'warning');
+                    }
+                    dom.missionInput.value = "";
+                } catch (err) {
+                    // fout is al gelogd door fetchJSON; extra melding voor de gebruiker
+                    addLogEntry(`Fout bij starten missie: ${err.message}`, 'error');
+                } finally {
+                    dom.startMissionBtn.disabled = false;
+                    dom.startMissionBtn.textContent = "Start Missie";
+                    await updateDashboardFromAPI();   // forceer een refresh
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // Helper: visuele foutbanner bovenaan (eenmalig)
+            // -----------------------------------------------------------------
+            function showErrorBanner(message) {
+                if (dom.errorBanner) return; // al zichtbaar
+                const banner = document.createElement('div');
+                banner.className = 'bg-red-800 text-white p-3 rounded-md mb-4';
+                banner.textContent = message;
+                document.body.insertBefore(banner, document.body.firstChild);
+                dom.errorBanner = banner;
+            }
+
+            // -----------------------------------------------------------------
+            // Init
+            // -----------------------------------------------------------------
+            function init() {
+                addLogEntry('Command Center V7 (Groq) geïnitialiseerd.', 'milestone');
+                dom.startMissionBtn.addEventListener('click', startMission);
+                setInterval(() => dom.time.textContent = new Date().toLocaleTimeString('nl-NL'), 1000);
+                updateDashboardFromAPI();
+                setInterval(updateDashboardFromAPI, 3000);
+            }
+ 
+             init();
+         });
+     </script>
+ </body>
+ </html>

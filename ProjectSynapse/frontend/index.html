@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Project Synapse - Frontend</title>
+  <style>
+    body { font-family: system-ui,Segoe UI,Roboto,Helvetica,Arial; background:#0f172a; color:#e6edf3; padding:20px }
+    .card { background:#0b1220; padding:12px; border-radius:8px; margin-bottom:12px }
+    pre { white-space:pre-wrap; word-break:break-word }
+  </style>
+</head>
+<body>
+  <h1>Project Synapse — Dashboard (Minimal)</h1>
+  <div class="card">
+    <button id="btnRefresh">Refresh data</button>
+    <p id="status">Status: unknown</p>
+  </div>
+
+  <div class="card">
+    <h3>Agents</h3>
+    <pre id="agents">(no data)</pre>
+  </div>
+
+  <div class="card">
+    <h3>Project Queue</h3>
+    <pre id="queue">(no data)</pre>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

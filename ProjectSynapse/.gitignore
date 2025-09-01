@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+backend/venv/
+.venv/
+
+# Editor / OS
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini
+
+# AI debugger state and env
+backend/.ai_debugger_state.json
+backend/.env
