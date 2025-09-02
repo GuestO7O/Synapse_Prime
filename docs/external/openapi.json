@@ -43,6 +43,25 @@
         }
       }
     },
+    "/api/v1/system/logs": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Get System Logs Slash",
+        "operationId": "get_system_logs_slash_api_v1_system_logs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/project-queue": {
       "get": {
         "tags": [
@@ -67,6 +86,62 @@
         ],
         "summary": "Add To Queue",
         "operationId": "add_to_queue_api_v1_project_queue_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mission"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/queue": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Get Queue Slash",
+        "operationId": "get_queue_slash_api_v1_project_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Add To Queue Slash",
+        "operationId": "add_to_queue_slash_api_v1_project_queue_post",
         "requestBody": {
           "content": {
             "application/json": {
