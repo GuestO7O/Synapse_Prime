@@ -18,13 +18,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f ProjectSynapse/backend/requirements.txt ]; then pip install -r ProjectSynapse/backend/requirements.txt; fi
+      - name: Install lint tools
+        run: |
+          python -m pip install ruff mypy
       - name: Run tests
         working-directory: ProjectSynapse/backend
         run: |
           python -m pytest -q
+      - name: Run ruff
+        run: |
+          ruff check .
+      - name: Run mypy on backend
+        run: |
+          mypy ProjectSynapse/backend || true
       - name: Export OpenAPI
         run: |
-          python ../../scripts/export_openapi.py --backend-dir ProjectSynapse/backend --out docs/external/openapi.json
+          python scripts/export_openapi.py --backend-dir ProjectSynapse/backend --out docs/external/openapi.json
       - name: Upload OpenAPI artifact
         uses: actions/upload-artifact@v4
         with:

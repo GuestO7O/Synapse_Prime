@@ -4,7 +4,7 @@ This client is intentionally minimal and dependency-light (uses `requests`).
 It's designed for interactive use and for integration in small scripts.
 """
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 import requests
 
 
