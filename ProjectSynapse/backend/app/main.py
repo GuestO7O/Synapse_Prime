@@ -17,6 +17,7 @@ frontend_origin = getenv("FRONTEND_ORIGIN", "http://127.0.0.1:5173")
 # Ondersteun veelgebruikte lokale origins + file (null) origin voor statische HTML
 allowed_origins = [
     frontend_origin,
+    "http://127.0.0.1:8080",  # HTTP server for frontend testing
     "http://127.0.0.1:8003",
     "http://127.0.0.1:8002",
     "http://127.0.0.1:8000",

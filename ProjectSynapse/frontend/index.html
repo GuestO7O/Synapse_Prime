@@ -578,7 +578,16 @@
     <div id="particlesContainer" class="particles-container"></div>
 
   <!-- Optional local overrides -->
-  <script src="config.js" defer></script>
+  <script>
+    // Load config.js optionally to avoid 404 errors when file doesn't exist
+    const configScript = document.createElement('script');
+    configScript.src = 'config.js';
+    configScript.defer = true;
+    configScript.onerror = function() {
+      console.log('ℹ️ No config.js found - using auto-detection (this is normal)');
+    };
+    document.head.appendChild(configScript);
+  </script>
   <script src="main.js?v=3"></script>
     <script>
       // Debug script om te zien wat er gebeurt
