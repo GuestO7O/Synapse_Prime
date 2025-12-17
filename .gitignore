@@ -13,8 +13,9 @@ __pycache__/
 .idea/
 
 # Logs
-ProjectSynapse/backend/uvicorn.out.log
-ProjectSynapse/backend/uvicorn.err.log
+ProjectSynapse/backend/uvicorn*.log
+.ruff_cache/
+.mypy_cache/
 
 
 
